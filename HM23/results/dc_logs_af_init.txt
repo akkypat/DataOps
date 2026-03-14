@@ -1,0 +1,58 @@
+PS C:\Projects\DE2026_DataOPS_HW\HW23> docker compose logs airflow-init
+airflow_init  | 
+airflow_init  | /home/airflow/.local/lib/python3.12/site-packages/airflow/utils/providers_configuration_loader.py:55 DeprecationWarning: `db init` is deprecated.  Use `db migrate` instead to migrate the db and/or airflow connections create-default-connections to create the default connections
+airflow_init  | DB: postgresql+psycopg2://airflow_user:***@db:5432/airflow_db
+airflow_init  | [2026-03-11T20:08:46.168+0000] {migration.py:207} INFO - Context impl PostgresqlImpl.
+airflow_init  | [2026-03-11T20:08:46.168+0000] {migration.py:210} INFO - Will assume transactional DDL.
+airflow_init  | INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+airflow_init  | INFO  [alembic.runtime.migration] Will assume transactional DDL.
+airflow_init  | INFO  [alembic.runtime.migration] Running stamp_revision  -> 5f2621c13b39
+airflow_init  | WARNI [airflow.models.crypto] empty cryptography key - values will not be stored encrypted.
+airflow_init  | Initialization done
+airflow_init  | /home/airflow/.local/lib/python3.12/site-packages/airflow/cli/cli_config.py:49 DeprecationWarning: `db upgrade` is deprecated. Use `db migrate` instead.
+airflow_init  | DB: postgresql+psycopg2://airflow_user:***@db:5432/airflow_db
+airflow_init  | Performing upgrade to the metadata database postgresql+psycopg2://airflow_user:***@db:5432/airflow_db
+airflow_init  | [2026-03-11T20:08:49.371+0000] {migration.py:207} INFO - Context impl PostgresqlImpl.
+airflow_init  | [2026-03-11T20:08:49.371+0000] {migration.py:210} INFO - Will assume transactional DDL.
+airflow_init  | [2026-03-11T20:08:49.373+0000] {migration.py:207} INFO - Context impl PostgresqlImpl.
+airflow_init  | [2026-03-11T20:08:49.374+0000] {migration.py:210} INFO - Will assume transactional DDL.
+airflow_init  | [2026-03-11T20:08:49.375+0000] {db.py:1675} INFO - Creating tables
+airflow_init  | INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+airflow_init  | INFO  [alembic.runtime.migration] Will assume transactional DDL.
+airflow_init  | INFO  [alembic.runtime.migration] Context impl PostgresqlImpl.
+airflow_init  | INFO  [alembic.runtime.migration] Will assume transactional DDL.
+airflow_init  | Database migrating done!
+airflow_init  | Usage: airflow users create [-h] -e EMAIL -f FIRSTNAME -l LASTNAME
+airflow_init  |                             [-p PASSWORD] -r ROLE [--use-random-password] -u
+airflow_init  |                             USERNAME [-v]
+airflow_init  |
+airflow_init  | Create a user
+airflow_init  |
+airflow_init  | Options:
+airflow_init  |   -h, --help            show this help message and exit
+airflow_init  |   -e, --email EMAIL     Email of the user
+airflow_init  |   -f, --firstname FIRSTNAME
+airflow_init  |                         First name of the user
+airflow_init  |   -l, --lastname LASTNAME
+airflow_init  |                         Last name of the user
+airflow_init  |   -p, --password PASSWORD
+airflow_init  |                         Password of the user, required to create a user without --use-random-password
+airflow_init  |   -r, --role ROLE       Role of the user. Existing roles include Admin, User, Op, Viewer, and Public
+airflow_init  |   --use-random-password
+airflow_init  |                         Do not prompt for password. Use random string instead. Required to create a user without --password       
+airflow_init  |   -u, --username USERNAME
+airflow_init  |                         Username of the user
+airflow_init  |   -v, --verbose         Make logging output more verbose
+airflow_init  |
+airflow_init  | examples:
+airflow_init  | To create an user with "Admin" role and username equals to "admin", run:
+airflow_init  |
+airflow_init  |     $ airflow users create \
+airflow_init  |           --username admin \
+airflow_init  |           --firstname FIRST_NAME \
+airflow_init  |           --lastname LAST_NAME \
+airflow_init  |           --role Admin \
+airflow_init  |           --email admin@example.org
+airflow_init  |
+airflow_init  | airflow users create command error: the following arguments are required: -f/--firstname, -l/--lastname, see help above.
+airflow_init  | /bin/bash: line 5: --firstname: command not found

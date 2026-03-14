@@ -1,0 +1,21 @@
+PS C:\Projects\DE2026_DataOPS_HW\HW23> docker compose logs airflow-scheduler
+airflow_scheduler  | 
+airflow_scheduler  |   ____________       _____________
+airflow_scheduler  |  ____    |__( )_________  __/__  /________      __
+airflow_scheduler  | ____  /| |_  /__  ___/_  /_ __  /_  __ \_ | /| / /
+airflow_scheduler  | ___  ___ |  / _  /   _  __/ _  / / /_/ /_ |/ |/ /
+airflow_scheduler  |  _/_/  |_/_/  /_/    /_/    /_/  \____/____/|__/
+airflow_scheduler  | [2026-03-11T20:09:03.826+0000] {_client.py:1026} INFO - HTTP Request: GET https://apacheairflow.gateway.scarf.sh/scheduler?version=2.10.4&python_version=3.12&platform=Linux&arch=x86_64&database=postgresql&db_version=17.9&executor=LocalExecutor "HTTP/1.1 200 OK"
+airflow_scheduler  | [2026-03-11T20:09:04.343+0000] {executor_loader.py:254} INFO - Loaded executor: LocalExecutor
+airflow_scheduler  | [2026-03-11 20:09:04 +0000] [24] [INFO] Starting gunicorn 23.0.0
+airflow_scheduler  | [2026-03-11T20:09:04.411+0000] {scheduler_job_runner.py:950} INFO - Starting the scheduler
+airflow_scheduler  | [2026-03-11T20:09:04.413+0000] {scheduler_job_runner.py:957} INFO - Processing each file at most -1 times
+airflow_scheduler  | [2026-03-11 20:09:04 +0000] [24] [INFO] Listening at: http://[::]:8793 (24)
+airflow_scheduler  | [2026-03-11 20:09:04 +0000] [24] [INFO] Using worker: sync
+airflow_scheduler  | [2026-03-11 20:09:04 +0000] [25] [INFO] Booting worker with pid: 25
+airflow_scheduler  | [2026-03-11 20:09:04 +0000] [26] [INFO] Booting worker with pid: 26
+airflow_scheduler  | [2026-03-11T20:09:04.769+0000] {manager.py:174} INFO - Launched DagFileProcessorManager with pid: 153
+airflow_scheduler  | [2026-03-11T20:09:04.777+0000] {scheduler_job_runner.py:1949} INFO - Adopting or resetting orphaned tasks for active dag runs
+airflow_scheduler  | [2026-03-11T20:09:04.795+0000] {settings.py:63} INFO - Configured default timezone UTC
+airflow_scheduler  | [2026-03-11T20:14:04.861+0000] {scheduler_job_runner.py:1949} INFO - Adopting or resetting orphaned tasks for active dag runs
+airflow_scheduler  | [2026-03-11T20:19:04.875+0000] {scheduler_job_runner.py:1949} INFO - Adopting or resetting orphaned tasks for active dag runs

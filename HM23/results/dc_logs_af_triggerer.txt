@@ -1,0 +1,29 @@
+PS C:\Projects\DE2026_DataOPS_HW\HW23> docker compose logs airflow-triggerer
+airflow_triggerer  | 
+airflow_triggerer  |   ____________       _____________
+airflow_triggerer  |  ____    |__( )_________  __/__  /________      __
+airflow_triggerer  | ____  /| |_  /__  ___/_  /_ __  /_  __ \_ | /| / /
+airflow_triggerer  | ___  ___ |  / _  /   _  __/ _  / / /_/ /_ |/ |/ /
+airflow_triggerer  |  _/_/  |_/_/  /_/    /_/    /_/  \____/____/|__/
+airflow_triggerer  | [2026-03-11 20:09:01 +0000] [15] [INFO] Starting gunicorn 23.0.0
+airflow_triggerer  | [2026-03-11 20:09:01 +0000] [15] [INFO] Listening at: http://[::]:8794 (15)
+airflow_triggerer  | [2026-03-11 20:09:01 +0000] [15] [INFO] Using worker: sync
+airflow_triggerer  | [2026-03-11 20:09:01 +0000] [16] [INFO] Booting worker with pid: 16
+airflow_triggerer  | [2026-03-11 20:09:01 +0000] [17] [INFO] Booting worker with pid: 17
+airflow_triggerer  | [2026-03-11T20:09:01.601+0000] {triggerer_job_runner.py:181} INFO - Setting up TriggererHandlerWrapper with handler <FileTaskHandler (NOTSET)>
+airflow_triggerer  | [2026-03-11T20:09:01.602+0000] {triggerer_job_runner.py:237} INFO - Setting up logging queue listener with handlers [<RedirectStdHandler <stdout> (NOTSET)>, <TriggererHandlerWrapper (NOTSET)>]
+airflow_triggerer  | [2026-03-11T20:09:01.608+0000] {triggerer_job_runner.py:338} INFO - Starting the triggerer
+airflow_triggerer  | [2026-03-11T20:10:01.662+0000] {triggerer_job_runner.py:510} INFO - 0 triggers currently running
+airflow_triggerer  | [2026-03-11T20:11:01.723+0000] {triggerer_job_runner.py:510} INFO - 0 triggers currently running
+airflow_triggerer  | [2026-03-11T20:12:01.769+0000] {triggerer_job_runner.py:510} INFO - 0 triggers currently running
+airflow_triggerer  | [2026-03-11T20:13:01.820+0000] {triggerer_job_runner.py:510} INFO - 0 triggers currently running
+airflow_triggerer  | [2026-03-11T20:14:01.870+0000] {triggerer_job_runner.py:510} INFO - 0 triggers currently running
+airflow_triggerer  | [2026-03-11T20:15:01.924+0000] {triggerer_job_runner.py:510} INFO - 0 triggers currently running
+airflow_triggerer  | [2026-03-11T20:16:01.981+0000] {triggerer_job_runner.py:510} INFO - 0 triggers currently running
+airflow_triggerer  | [2026-03-11T20:17:02.034+0000] {triggerer_job_runner.py:510} INFO - 0 triggers currently running
+airflow_triggerer  | [2026-03-11T20:18:02.089+0000] {triggerer_job_runner.py:510} INFO - 0 triggers currently running
+airflow_triggerer  | [2026-03-11T20:19:02.142+0000] {triggerer_job_runner.py:510} INFO - 0 triggers currently running
+airflow_triggerer  | [2026-03-11T20:20:02.193+0000] {triggerer_job_runner.py:510} INFO - 0 triggers currently running
+airflow_triggerer  | [2026-03-11T20:21:02.249+0000] {triggerer_job_runner.py:510} INFO - 0 triggers currently running
+airflow_triggerer  | [2026-03-11T20:22:02.298+0000] {triggerer_job_runner.py:510} INFO - 0 triggers currently running
+airflow_triggerer  | [2026-03-11T20:23:02.353+0000] {triggerer_job_runner.py:510} INFO - 0 triggers currently running
