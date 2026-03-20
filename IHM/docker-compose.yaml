@@ -1,0 +1,357 @@
+networks:
+  mlops-network:
+    driver: bridge
+
+volumes:
+  postgres-mlflow-data:
+  postgres-prompt-storage-data:
+  postgres-airflow-data:
+  postgres-lakefs-data:
+  minio-data:
+  prometheus-data:
+  grafana-data:
+
+services:
+  # Этап 1: MLflow
+  postgres-mlflow:
+    image: postgres:15
+    container_name: postgres-mlflow
+    profiles: ["mlflow"]
+    env_file: .env
+    environment:
+      POSTGRES_USER: ${MLFLOW_POSTGRES_USER:-mlflow}
+      POSTGRES_PASSWORD: ${MLFLOW_POSTGRES_PASSWORD:-mlflow123}
+      POSTGRES_DB: ${MLFLOW_POSTGRES_DB:-mlflow}
+    volumes:
+      - postgres-mlflow-data:/var/lib/postgresql/data
+    networks:
+      - mlops-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${MLFLOW_POSTGRES_USER:-mlflow}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mlflow:
+    build:
+      context: ./mlflow
+      dockerfile: Dockerfile
+    container_name: mlflow
+    profiles: ["mlflow"]
+    env_file: .env
+    ports:
+      - "5000:5000"
+    command: >
+      sh -c "mlflow db upgrade $${MLFLOW_BACKEND_STORE_URI} &&
+      mlflow server --workers=1 --host 0.0.0.0 --port 5000
+      --backend-store-uri=$${MLFLOW_BACKEND_STORE_URI}
+      --default-artifact-root=$${MLFLOW_ARTIFACT_ROOT}
+      --serve-artifacts"
+    environment:
+      MLFLOW_BACKEND_STORE_URI: postgresql://${MLFLOW_POSTGRES_USER:-mlflow}:${MLFLOW_POSTGRES_PASSWORD:-mlflow123}@postgres-mlflow:5432/${MLFLOW_POSTGRES_DB:-mlflow}
+      MLFLOW_ARTIFACT_ROOT: ${MLFLOW_ARTIFACT_ROOT:-/mlflow/artifacts}
+    volumes:
+      - ./mlflow/artifacts:/mlflow/artifacts
+    networks:
+      - mlops-network
+    depends_on:
+      postgres-mlflow:
+        condition: service_healthy
+
+  # Этап 2: Airflow
+  postgres-airflow:
+    image: postgres:15
+    container_name: postgres-airflow
+    profiles: ["airflow"]
+    env_file: .env
+    environment:
+      POSTGRES_USER: ${AIRFLOW_POSTGRES_USER:-airflow}
+      POSTGRES_PASSWORD: ${AIRFLOW_POSTGRES_PASSWORD:-airflow123}
+      POSTGRES_DB: ${AIRFLOW_POSTGRES_DB:-airflow}
+    volumes:
+      - postgres-airflow-data:/var/lib/postgresql/data
+    networks:
+      - mlops-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${AIRFLOW_POSTGRES_USER:-airflow}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  airflow-init:
+    image: apache/airflow:2.9.0
+    container_name: airflow-init
+    profiles: ["airflow"]
+    env_file: .env
+    environment:
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_POSTGRES_USER:-airflow}:${AIRFLOW_POSTGRES_PASSWORD:-airflow123}@postgres-airflow:5432/${AIRFLOW_POSTGRES_DB:-airflow}
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_POSTGRES_USER:-airflow}:${AIRFLOW_POSTGRES_PASSWORD:-airflow123}@postgres-airflow:5432/${AIRFLOW_POSTGRES_DB:-airflow}
+      _AIRFLOW_DB_MIGRATE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: ${AIRFLOW_ADMIN_USER:-admin}
+      _AIRFLOW_WWW_USER_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD:-admin}
+    command: version
+    networks:
+      - mlops-network
+    depends_on:
+      postgres-airflow:
+        condition: service_healthy
+
+  airflow-webserver:
+    image: apache/airflow:2.9.0
+    container_name: airflow-webserver
+    profiles: ["airflow"]
+    env_file: .env
+    ports:
+      - "8080:8080"
+    environment:
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_POSTGRES_USER:-airflow}:${AIRFLOW_POSTGRES_PASSWORD:-airflow123}@postgres-airflow:5432/${AIRFLOW_POSTGRES_DB:-airflow}
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_POSTGRES_USER:-airflow}:${AIRFLOW_POSTGRES_PASSWORD:-airflow123}@postgres-airflow:5432/${AIRFLOW_POSTGRES_DB:-airflow}
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+    command: webserver
+    networks:
+      - mlops-network
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-scheduler:
+    image: apache/airflow:2.9.0
+    container_name: airflow-scheduler
+    profiles: ["airflow"]
+    env_file: .env
+    environment:
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_POSTGRES_USER:-airflow}:${AIRFLOW_POSTGRES_PASSWORD:-airflow123}@postgres-airflow:5432/${AIRFLOW_POSTGRES_DB:-airflow}
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_POSTGRES_USER:-airflow}:${AIRFLOW_POSTGRES_PASSWORD:-airflow123}@postgres-airflow:5432/${AIRFLOW_POSTGRES_DB:-airflow}
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+    command: scheduler
+    networks:
+      - mlops-network
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+  airflow-triggerer:
+    image: apache/airflow:2.9.0
+    container_name: airflow-triggerer
+    profiles: ["airflow"]
+    env_file: .env
+    environment:
+      AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_POSTGRES_USER:-airflow}:${AIRFLOW_POSTGRES_PASSWORD:-airflow123}@postgres-airflow:5432/${AIRFLOW_POSTGRES_DB:-airflow}
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://${AIRFLOW_POSTGRES_USER:-airflow}:${AIRFLOW_POSTGRES_PASSWORD:-airflow123}@postgres-airflow:5432/${AIRFLOW_POSTGRES_DB:-airflow}
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+    command: triggerer
+    networks:
+      - mlops-network
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+
+  # Этап 3: LakeFS
+  postgres-lakefs:
+    image: postgres:15
+    container_name: postgres-lakefs
+    profiles: ["lakefs"]
+    env_file: .env
+    environment:
+      POSTGRES_USER: ${LAKEFS_POSTGRES_USER:-lakefs}
+      POSTGRES_PASSWORD: ${LAKEFS_POSTGRES_PASSWORD:-lakefs123}
+      POSTGRES_DB: ${LAKEFS_POSTGRES_DB:-lakefs}
+    volumes:
+      - postgres-lakefs-data:/var/lib/postgresql/data
+    networks:
+      - mlops-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${LAKEFS_POSTGRES_USER:-lakefs}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    profiles: ["lakefs"]
+    env_file: .env
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio-data:/data
+    networks:
+      - mlops-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  lakefs:
+    image: treeverse/lakefs:latest
+    container_name: lakefs
+    profiles: ["lakefs"]
+    env_file: .env
+    ports:
+      - "8001:8000"
+    environment:
+      LAKEFS_DATABASE_TYPE: postgres
+      LAKEFS_DATABASE_POSTGRES_CONNECTION_STRING: postgres://${LAKEFS_POSTGRES_USER:-lakefs}:${LAKEFS_POSTGRES_PASSWORD:-lakefs123}@postgres-lakefs:5432/${LAKEFS_POSTGRES_DB:-lakefs}?sslmode=disable
+      LAKEFS_AUTH_ENCRYPT_SECRET_KEY: ${LAKEFS_AUTH_SECRET:-some-random-secret-key-change-me}
+      LAKEFS_BLOCKSTORE_TYPE: s3
+      LAKEFS_BLOCKSTORE_S3_CREDENTIALS_ACCESS_KEY_ID: ${MINIO_ROOT_USER:-minioadmin}
+      LAKEFS_BLOCKSTORE_S3_CREDENTIALS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+      LAKEFS_BLOCKSTORE_S3_ENDPOINT: http://minio:9000
+      LAKEFS_BLOCKSTORE_S3_FORCE_PATH_STYLE: "true"
+    networks:
+      - mlops-network
+    depends_on:
+      postgres-lakefs:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+
+  # Этап 4: JupyterHub
+  jupyterhub:
+    build:
+      context: ./jupyterhub
+      dockerfile: Dockerfile
+    container_name: jupyterhub
+    profiles: ["jupyterhub"]
+    env_file: .env
+    ports:
+      - "8000:8000"
+    environment:
+      JUPYTERHUB_CRYPT_KEY: ${JUPYTERHUB_CRYPT_KEY:-generate-a-random-key-here}
+    volumes:
+      - ./jupyterhub/jupyterhub_config.py:/srv/jupyterhub/jupyterhub_config.py
+    networks:
+      - mlops-network
+
+  # Этап 5: ML-сервис
+  postgres-mlservice:
+    image: postgres:15
+    container_name: postgres-mlservice
+    profiles: ["ml-service"]
+    env_file: .env
+    environment:
+      POSTGRES_USER: ${MLSERVICE_POSTGRES_USER:-mlservice}
+      POSTGRES_PASSWORD: ${MLSERVICE_POSTGRES_PASSWORD:-mlservice123}
+      POSTGRES_DB: ${MLSERVICE_POSTGRES_DB:-mlservice}
+    volumes:
+      - ./ml-service/postgres-data:/var/lib/postgresql/data
+    networks:
+      - mlops-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${MLSERVICE_POSTGRES_USER:-mlservice}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    container_name: ml-service
+    profiles: ["ml-service"]
+    env_file: .env
+    ports:
+      - "8888:8888"
+    environment:
+      DATABASE_URL: postgresql://${MLSERVICE_POSTGRES_USER:-mlservice}:${MLSERVICE_POSTGRES_PASSWORD:-mlservice123}@postgres-mlservice:5432/${MLSERVICE_POSTGRES_DB:-mlservice}
+      MODEL_VERSION: ${MODEL_VERSION:-1.0.0}
+    networks:
+      - mlops-network
+    depends_on:
+      postgres-mlservice:
+        condition: service_healthy
+
+  # Этап 6: Мониторинг
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    profiles: ["monitoring"]
+    env_file: .env
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    networks:
+      - mlops-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    profiles: ["monitoring"]
+    env_file: .env
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - mlops-network
+    depends_on:
+      - prometheus
+
+  # Этап 9: Prompt Storage
+  postgres-prompt-storage:
+    image: postgres:15
+    container_name: postgres-prompt-storage
+    profiles: ["prompt-storage"]
+    env_file: .env
+    environment:
+      POSTGRES_USER: ${PROMPT_MLFLOW_POSTGRES_USER:-mlflow_prompt}
+      POSTGRES_PASSWORD: ${PROMPT_MLFLOW_POSTGRES_PASSWORD:-mlflow_prompt123}
+      POSTGRES_DB: ${PROMPT_MLFLOW_POSTGRES_DB:-mlflow_prompt}
+    volumes:
+      - postgres-prompt-storage-data:/var/lib/postgresql/data
+    networks:
+      - mlops-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${PROMPT_MLFLOW_POSTGRES_USER:-mlflow_prompt}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mlflow-prompt-storage:
+    build:
+      context: ./prompt-storage
+      dockerfile: Dockerfile
+    container_name: mlflow-prompt-storage
+    profiles: ["prompt-storage"]
+    env_file: .env
+    ports:
+      - "5001:5000"
+    command: >
+      mlflow server --workers=1 --host 0.0.0.0 --port 5000
+      --backend-store-uri=$${MLFLOW_BACKEND_STORE_URI}
+      --default-artifact-root=$${MLFLOW_ARTIFACT_ROOT}
+      --serve-artifacts
+    environment:
+      MLFLOW_BACKEND_STORE_URI: postgresql://${PROMPT_MLFLOW_POSTGRES_USER:-mlflow_prompt}:${PROMPT_MLFLOW_POSTGRES_PASSWORD:-mlflow_prompt123}@postgres-prompt-storage:5432/${PROMPT_MLFLOW_POSTGRES_DB:-mlflow_prompt}
+      MLFLOW_ARTIFACT_ROOT: ${PROMPT_MLFLOW_ARTIFACT_ROOT:-/mlflow/artifacts}
+    volumes:
+      - ./prompt-storage/artifacts:/mlflow/artifacts
+    networks:
+      - mlops-network
+    depends_on:
+      postgres-prompt-storage:
+        condition: service_healthy
