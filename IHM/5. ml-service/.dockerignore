@@ -1,0 +1,9 @@
+results/
+README.md
+*.log
+.git
+postgres-data/
+test_api.py
+__pycache__/
+*.pyc
+.pytest_cache/
