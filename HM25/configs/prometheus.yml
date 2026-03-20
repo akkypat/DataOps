@@ -1,0 +1,22 @@
+# ДЗ по теме 25: Мониторинг и логирование
+# Конфигурация Prometheus для сбора метрик с себя и node-exporter
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Сам Prometheus (метрики в т.ч. query_range для дашборда)
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Node Exporter — метрики хоста (CPU, память и т.д.)
+  - job_name: node-exporter
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  # ML-сервис (HW24) — если запущен в той же сети, раскомментируйте и укажите имя сервиса
+  # - job_name: mlapp
+  #   static_configs:
+  #     - targets: ["mlapp:8888"]
