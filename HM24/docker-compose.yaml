@@ -1,0 +1,20 @@
+# ДЗ по теме 24: Docker Compose для ML-сервиса Diabetes
+# Перед запуском обучите модель: py research/train_standalone.py (или используйте research/train.ipynb)
+services:
+  mlapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hw-topic24-mlapp
+    ports:
+      - "8899:8888"
+    environment:
+      MODEL_PATH: /app/models/diabets
+    volumes:
+      - ./models:/app/models
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8888/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
