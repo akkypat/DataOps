@@ -1,0 +1,57 @@
+# Production values для ML Service
+
+replicaCount: 5
+
+image:
+  repository: myregistry.io/ml-service
+  tag: "2.0.0"
+  pullPolicy: Always
+
+service:
+  type: LoadBalancer
+  port: 80
+  targetPort: 8888
+
+ingress:
+  enabled: true
+  className: nginx
+  host: ml-service.production.com
+  path: /
+  pathType: Prefix
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+
+env:
+  modelVersion: "2.0.0"
+  databaseUrl: "postgresql://mlservice:CHANGE_PASSWORD@prod-postgres:5432/mlservice"
+
+probes:
+  startup:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 15
+    periodSeconds: 5
+    failureThreshold: 12
+    timeoutSeconds: 5
+
+  readiness:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 5
+    periodSeconds: 5
+    failureThreshold: 3
+    timeoutSeconds: 3
+
+  liveness:
+    enabled: true
+    path: /health
+    initialDelaySeconds: 20
+    periodSeconds: 15
+    failureThreshold: 3
+    timeoutSeconds: 5
